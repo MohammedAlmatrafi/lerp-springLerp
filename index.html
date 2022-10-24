@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        background-color: rgb(36, 36, 36);
+        overflow: hidden;
+      }
+      .circle {
+        border-radius: 100%;
+        position: absolute;
+        user-select: none;
+      }
+      #circle1 {
+        background-color: rgb(78, 145, 221);
+        width: 100px;
+        height: 100px;
+      }
+      #circle1::after {
+        content: "Lerp";
+        color: rgb(78, 145, 221);
+        position: absolute;
+        left: 50%;
+        bottom: -20px;
+        margin-left: -15px;
+        text-transform: uppercase;
+      }
+      #circle2 {
+        background-color: rgb(78, 221, 102);
+        width: 80px;
+        height: 80px;
+      }
+      #circle2::before {
+        content: "Spring Lerp";
+        color: rgb(78, 221, 102);
+        position: absolute;
+        left: 50%;
+        top: -30px;
+        width: max-content;
+        margin-left: -50px;
+        text-transform: uppercase;
+      }
+      .title {
+        color: rgba(255, 255, 255, 0.445);
+        letter-spacing: 1px;
+        text-align: center;
+        margin-top: 40px;
+        user-select: none;
+        transition: 200ms;
+      }
+      .title.hide {
+        opacity: 0;
+      }
+    </style>
+    <title>Lerping</title>
+  </head>
+  <body>
+    <h1 class="title">Click anywhere to move the circles</h1>
+    <div id="circle1" class="circle"></div>
+    <div id="circle2" class="circle"></div>
+  </body>
+  <script>
+    class Vector2 {
+      constructor(x, y) {
+        this.set(x, y);
+        this.velocity = {
+          x: 0,
+          y: 0,
+        };
+      }
+    }
+
+    Vector2.prototype.set = function (x, y) {
+      this.x = x;
+      this.y = y;
+    };
+
+    Vector2.prototype.multiplyBy = function (constant) {
+      this.set(this.x * constant, this.y * constant);
+    };
+    Vector2.prototype.add = function (constant) {
+      this.set(this.x + constant, this.y + constant);
+    };
+
+    Vector2.prototype.lerp = function (target, factor) {
+      this.x += (target.x - this.x) * factor;
+      this.y += (target.y - this.y) * factor;
+    };
+
+    Vector2.prototype.springLerp = function (target, drag, strength) {
+      let force = new Vector2(target.x - this.x, target.y - this.y);
+      force.multiplyBy(strength);
+      this.velocity.x *= drag;
+      this.velocity.y *= drag;
+
+      this.velocity.x += force.x;
+      this.velocity.y += force.y;
+      this.set(this.x + this.velocity.x, this.y + this.velocity.y);
+    };
+
+    const circle1 = document.querySelector("#circle1");
+    const circle2 = document.querySelector("#circle2");
+    const title = document.querySelector(".title");
+    const initialX = screen.width / 2;
+    const initialY = screen.height / 2 - 200;
+    const circlePos = new Vector2(initialX, initialY);
+    const circle2Pos = new Vector2(initialX, initialY);
+    const target = new Vector2(initialX, initialY);
+
+    let clicked = false;
+    document.addEventListener("click", function (e) {
+      target.set(e.x, e.y);
+      if (!clicked) {
+        title.classList.add("hide");
+        clicked = true;
+      }
+    });
+
+    const REFRESH_RATE = 10;
+    setInterval(handleLerp, REFRESH_RATE);
+
+    const FACTOR = 0.1;
+    const DRAG = 0.85;
+    const STRENGTH = 0.06;
+    function handleLerp() {
+      circlePos.lerp(target, FACTOR);
+      circle1.style.left = circlePos.x - 50 + "px";
+      circle1.style.top = circlePos.y - 50 + "px";
+
+      circle2Pos.springLerp(target, DRAG, STRENGTH);
+      circle2.style.left = circle2Pos.x - 40 + "px";
+      circle2.style.top = circle2Pos.y - 40 + "px";
+    }
+  </script>
+</html>
